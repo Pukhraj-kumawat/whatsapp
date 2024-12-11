@@ -83,6 +83,8 @@ const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const path = require('path');
 const { Client, MessageMedia } = require('whatsapp-web.js');
+const axios = require('axios');
+
 
 // Initialize Express server
 const app = express();
@@ -122,49 +124,64 @@ client.on('ready', () => {
 client.on('message', async (message) => {
     console.log(`Message from ${message.from}: ${message.body}`);
 
+
+    try {
+        const apiUrl = 'http://127.0.0.1:8000/webhook'; 
+        const payload = { userNo: message.from,messageBody:message.body }; 
+        const headers = { 
+          'Content-Type': 'application/json',           
+        };
+  
+        const res = await axios.post(apiUrl, payload, { headers });
+        console.log('The response is',res)
+    } catch (error) {
+        console.error('Error sending message:', error);
+      }
+
+
     // Check if the message has media
-    if (message.hasMedia) {
-        const media = await message.downloadMedia();
-        if (media) {
-            // Define the folder where media will be saved
-            const mediaFolder = './downloads';
-            if (!fs.existsSync(mediaFolder)) {
-                fs.mkdirSync(mediaFolder); // Create the folder if it doesn't exist
-            }
+    // if (message.hasMedia) {
+    //     const media = await message.downloadMedia();
+    //     if (media) {
+    //         // Define the folder where media will be saved
+    //         const mediaFolder = './downloads';
+    //         if (!fs.existsSync(mediaFolder)) {
+    //             fs.mkdirSync(mediaFolder); // Create the folder if it doesn't exist
+    //         }
 
-            // Get the file extension from MIME type
-            const mimeToExt = {
-                'image/jpeg': '.jpg',
-                'image/png': '.png',
-                'image/gif': '.gif',
-                'video/mp4': '.mp4',
-                'audio/mpeg': '.mp3',
-                'application/pdf': '.pdf',
-                // Add more MIME types as needed
-            };
-            const fileExtension = mimeToExt[media.mimetype] || '';
+    //         // Get the file extension from MIME type
+    //         const mimeToExt = {
+    //             'image/jpeg': '.jpg',
+    //             'image/png': '.png',
+    //             'image/gif': '.gif',
+    //             'video/mp4': '.mp4',
+    //             'audio/mpeg': '.mp3',
+    //             'application/pdf': '.pdf',
+    //             // Add more MIME types as needed
+    //         };
+    //         const fileExtension = mimeToExt[media.mimetype] || '';
 
-            // Generate a unique filename with proper extension
-            const fileName = media.filename || `media_${Date.now()}${fileExtension}`;
-            const filePath = path.join(mediaFolder, fileName);
+    //         // Generate a unique filename with proper extension
+    //         const fileName = media.filename || `media_${Date.now()}${fileExtension}`;
+    //         const filePath = path.join(mediaFolder, fileName);
 
-            // Write the media data to the file
-            fs.writeFileSync(filePath, Buffer.from(media.data, 'base64'));
-            console.log(`Media saved to: ${filePath}`);
-        }
-    }
+    //         // Write the media data to the file
+    //         fs.writeFileSync(filePath, Buffer.from(media.data, 'base64'));
+    //         console.log(`Media saved to: ${filePath}`);
+    //     }
+    // }
 
     // Reply to 'ping' messages
-    if (message.body === 'ping' || message.body === 'Ping') {
-        client.sendMessage(message.from, 'pong');
+    // if (message.body === 'ping' || message.body === 'Ping') {
+    //     client.sendMessage(message.from, 'pong');
 
-        // Create a MessageMedia object for the image
-        const imageUrl = 'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
-        const image = await MessageMedia.fromUrl(imageUrl);
+    //     // Create a MessageMedia object for the image
+    //     const imageUrl = 'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1';
+    //     const image = await MessageMedia.fromUrl(imageUrl);
 
-        // Send the image with a caption
-        client.sendMessage(message.from, image, { caption: 'Here is your image!' });
-    }
+    //     // Send the image with a caption
+    //     client.sendMessage(message.from, image, { caption: 'Here is your image!' });
+    // }
 });
 
 // Endpoint to serve the QR code as HTML
